@@ -21,6 +21,8 @@ add_library(
     registers.asm
 )
 
+set_source_files_properties(memory.cpp PROPERTIES COMPILE_DEFINITIONS PAGE_SIZE=${TALOS_PAGE_SIZE})
+
 target_link_libraries(talos-cpu talos-cpu-x86-trampoline)
 
 # talos-cpu has HAL implementations libk uses

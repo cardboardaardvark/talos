@@ -10,7 +10,7 @@ those C++ features.
 
 ## FAQ
 
-* Q: How many bugs are there? A: YES.
+* Q: How many bugs are there? A: Yes.
 
 * Q: Why? A: It's fun. Also I want to experiment with creating a new user space API
   that is not Windows and is not Unix.
@@ -101,6 +101,10 @@ don't have to use cmake --build
 * Build the talos-bin target to compile the kernel. There are again many ways
   to do this but as an example try: nice cmake --build . -j4 -t talos-bin
 
+### Running The Kernel
+
+* The kernel outputs log messages to the VGA screen and to PC serial port #1.
+
 * Once the kernel is built you can execute it inside QEMU with something like:
   qemu-system-i386 --kernel talos.bin
 
@@ -121,55 +125,63 @@ don't have to use cmake --build
   burning it to optical media or writing it to a USB thumb drive. An example
   of booting the GRUB iso with QEMU: qemu-system-i386 --cdrom grub.iso
 
+* You can control the VGA and serial output from QEMU with CMAKE variables. Look
+  at the CMakeLists.txt in platform/ibmpc to see the variables.
+
 ## Hacking
 
 Note: This information could easily be out of date or stale.
 
 Warning: The build system is blind to some dependencies. For instance if link.ld
-is changed it will not automatically cause talos.bin to be relinked.
+is changed it will not automatically cause talos.bin to be relinked. For the places
+this happens you'll find comments at the top of the files it applies to. File a bug
+report if such a comment is missing.
 
-Look in the src/platform/ibmpc directory. It all starts with link.ld which is the
-linker script used as the last step of building talos.bin. The entry point is defined
-in there and it is the boot() function.
+Look in the [src/platform/ibmpc](src/platform/ibmpc) directory. It all starts with
+[link.ld](src/platform/ibmpc/link.ld) which is the linker script used as the last
+step of building talos.bin. The entry point is defined in there and it is the
+boot() function.
 
-The boot() function is implemented in assembly and exists in crt0.asm. crt0.asm calls
-the init() function, which is implemented in start.cpp, then finally the start() function
-which is implemented in src/kernel/main.cpp
+The boot() function is implemented in assembly and exists in [crt0.asm](src/platform/ibmpc/crt0.asm).
+crt0.asm calls the init() function, which is implemented in [init.cpp](src/platform/ibmpc/init.cpp),
+then finally the start() function which is implemented in
+[src/kernel/start.cpp](src/kernel/start.cpp).
 
 The directory organization right now isn't great.
 
-* cmake/ Holds the cross compile configuration
+* [cmake/](cmake/) Holds the cross compile configuration
 
-* src/abi/ Mostly stuff related to keeping the libc and libstdc++ happy. Also where
+* [src/abi/](src/abi/) Mostly stuff related to keeping the libc and libstdc++ happy. Also where
   the heap/program break is implemented.
 
-* src/config/ Header files that define platform and CPU specific configuration values.
+* [src/config/](src/config/) Header files that define platform and CPU specific configuration values.
 
-* src/contrib/ Software from third parties that is incorporated with little or no modification.
+* [src/contrib/](src/contrib/) Software from third parties that is incorporated with little or no modification.
   See below for more information about the contributed software.
 
-* src/cpu/ CPU specific things like setting up the interupt vector, paging/TLB configuration, etc.
+* [src/cpu/](src/cpu/) CPU specific things like setting up the interupt vector, paging/TLB configuration, etc.
 
-* src/driver/ Hardware things that are not tied to any specific CPU (ie, i686) or platform (ie, IBM PC).
+* [src/driver/](src/driver/) Hardware things that are not tied to any specific CPU (ie, i686) or platform (ie, IBM PC).
   The VGA implementation is in there as well as a generic UART interface and some others.
 
-* src/hal/ Hardware Abstraction Layer - currently header files that define an interface the
+* [src/hal/](src/hal/) Hardware Abstraction Layer - currently header files that define an interface the
   CPU and platform implement.
 
-* src/kernel/ The part that does kernel type things: schedule and execute timers, maintain a job list, etc
+* [src/kernel/](src/kernel/) The part that does kernel type things: schedule and execute timers, maintain a job list, etc
 
-* src/libk/ A library of stuff that's useful for all the different parts of the project. Wraps around the HAL,
+* [src/libk/](src/libk/) A library of stuff that's useful for all the different parts of the project. Wraps around the HAL,
   libc, libstdc++, etc.
 
-* src/platform/ Stuff related to making a bootable binary for the PC, doing hardware initialization, sending the
+* [src/platform/](src/platform/) Stuff related to making a bootable binary for the PC, doing hardware initialization, sending the
   log messages to COM1 and the VGA screen, etc.
 
-* toolchain/ The compiler, binutils, libc, etc
+* [toolchain/](toolchain/) The compiler, binutils, libc, etc
 
 ## Contributed Software
 
-Right now two different projects are incorporated into the source tree: Dan Lea's malloc() implementation and
-Marco Paland's embeded printf() implementation.
+Right now two different projects are incorporated into the source tree: Dan Lea's
+[malloc()](https://gee.cs.oswego.edu/dl/html/malloc.html) implementation and
+Marco Paland's [embeded printf()](https://github.com/mpaland/printf) implementation.
 
 ### malloc
 
@@ -180,7 +192,7 @@ under the MIT license.
 ### printf
 
 Marco Paland's printf() is used to implement the libk::write* functions because it does not require malloc()
-to be functional. It is not exposed as the libc printf() which is the one that comes from newlib. There is a good amount
+to be functional. It is not exposed as the libc printf() which is the one that comes from Newlib. There is a good amount
 of logging that needs to happen before malloc() works which is why a printf() implementation that only uses the stack
 was chosen to implement it. It has a limited feature set though which is why it is not exposed as the libc printf().
 

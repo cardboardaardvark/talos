@@ -3,8 +3,6 @@
 #include <cpu/x86/io.hpp>
 #include <driver/serial/uart.hpp>
 
-#define COM1_IO_PORT 0x3F8
-
 namespace platform
 {
 

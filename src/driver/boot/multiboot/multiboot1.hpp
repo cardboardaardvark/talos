@@ -2,21 +2,6 @@
 
 #include <cstdint>
 
-#define MULTIBOOT1_MAGIC 0x2BADB002
-
-#define MULTIBOOT1_MEMORY_FLAG 1 << 0
-#define MULTIBOOT1_BOOT_DEVICE_FLAG 1 << 1
-#define MULTIBOOT1_CMDLINE_FLAG  1 << 2
-#define MULTIBOOT1_MODULES_FLAG 1 << 3
-#define MULTIBOOT1_AOUT_SYMBOLS_FLAG 1 << 4
-#define MULTIBOOT1_ELF_SYMBOLS_FLAG 1 << 5
-#define MULTIBOOT1_BOOTLOADER_NAME_FLAG 1 << 9
-
-#define MULTIBOOT1_MMAP_TYPE_AVAILABLE 1
-#define MULTIBOOT1_MMAP_TYPE_ACPI 3
-#define MULTIBOOT1_MMAP_TYPE_PRESERVED 4
-#define MULTIBOOT1_MMAP_TYPE_UNAVAILABLE 5
-
 namespace driver
 {
 
@@ -25,6 +10,22 @@ namespace boot
 
 namespace multiboot
 {
+
+using v1_multiboot_magic_t = uint32_t;
+const v1_multiboot_magic_t v1_magic = 0x2BADB002;
+
+const unsigned int v1_memory_flag = 1 << 0;
+const unsigned int v1_boot_device_flag = 1 << 1;
+const unsigned int v1_cmdline_flag = 1 << 2;
+const unsigned int v1_modules_flag = 1 << 3;
+const unsigned int v1_aout_symbols_flag = 1 << 4;
+const unsigned int v1_elf_symbols_flag = 1 << 5;
+const unsigned int v1_bootloader_name_flag = 1 << 9;
+
+const unsigned int v1_mmap_type_available = 1;
+const unsigned int v1_mmap_type_acpi = 3;
+const unsigned int v1_mmap_type_preserved = 4;
+const unsigned int v1_mmap_type_unavailable = 5;
 
 typedef struct
 {

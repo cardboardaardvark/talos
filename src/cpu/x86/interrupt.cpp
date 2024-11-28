@@ -7,7 +7,7 @@
 namespace hal
 {
 
-namespace x86 = cpu::x86;
+using namespace cpu::x86;
 
 void wait() noexcept
 {
@@ -37,7 +37,7 @@ void enable_interrupts(bool enabled) noexcept
 
 bool interrupts_enabled() noexcept
 {
-    return x86::read_flags() & FLAGS_INTERRUPT_ENABLE;
+    return read_flags() & enable_interrupts_flag;
 }
 
 } // namespace hal

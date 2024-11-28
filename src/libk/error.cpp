@@ -16,8 +16,8 @@ namespace libk
     std::va_list args;
 
     va_start(args, format);
-    libk::write_log("PANIC: ");
-    libk::vwritef_log(format, args);
+    libk::print("PANIC: ");
+    libk::vprintf(format, args);
     va_end(args);
 
     halt();

@@ -2,6 +2,7 @@
 #include <forward_list>
 #include <list>
 
+#include <config-timer.hpp>
 #include <hal/interrupt.hpp>
 #include <libk/assert.hpp>
 #include <libk/error.hpp>
@@ -134,6 +135,11 @@ void isr_tick_handler() noexcept
     // To get out of the ISR as soon as possible schedule a job to check the contents
     // of the timer queue.
     add_job(check_timers_job);
+}
+
+kernel_uptime_t uptime() noexcept
+{
+    return get_tick_count() / hal::kernel_frequency;
 }
 
 } // namespace kernel

@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <config-memory.hpp>
+
 namespace libk
 {
 
@@ -14,7 +16,7 @@ enum class MutexState : mutex_state_t
 };
 
 // General purpose spin lock based mutex
-typedef struct alignas(PAGE_SIZE)
+typedef struct alignas(hal::page_size)
 {
     // Make sure the storage for the atomic operations is the
     // first member of the struct so it is the thing aligned
@@ -26,7 +28,7 @@ typedef struct alignas(PAGE_SIZE)
 // inside an ISR. It has debug checks to ensure interrupts are disabled
 // to avoid reentrancy issues that exist when execution can happen
 // inside and outside of an ISR.
-typedef struct alignas(PAGE_SIZE)
+typedef struct alignas(hal::page_size)
 {
     // Make sure the storage for the atomic operations is the
     // first member of the struct so it is the thing aligned

@@ -5,11 +5,6 @@
 
 #include <config-memory.hpp>
 
-#define PAGE_FLAG_NONE 0
-#define PAGE_FLAG_USER (1 << 0)
-#define PAGE_FLAG_RW (1 << 1)
-#define PAGE_FLAG_PRESENT (1 << 2)
-
 namespace hal
 {
 
@@ -17,6 +12,11 @@ typedef std::uint_fast8_t page_flags_t;
 typedef bool (page_directory_visitor_t)(page_directory_t, void *args);
 
 extern "C" const page_directory_t kernel_page_directory;
+
+const unsigned int page_flag_none = 0;
+const unsigned int page_flag_user = 1 << 0;
+const unsigned int page_flag_rw = 1 << 1;
+const unsigned int page_flag_present = 1 << 2;
 
 void * alloc_physical() noexcept;
 void free_physical(void *page) noexcept;

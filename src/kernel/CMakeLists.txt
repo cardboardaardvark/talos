@@ -3,7 +3,7 @@ add_library(
     EXCLUDE_FROM_ALL
 
     job.cpp
-    main.cpp
+    start.cpp
     timer.cpp
 )
 

@@ -1,5 +1,6 @@
 #include <cstddef>
 
+#include <config-memory.hpp>
 #include <hal/memory.hpp>
 #include <libk/assert.hpp>
 #include <libk/memory.hpp>
@@ -8,6 +9,8 @@
 #include "memory.hpp"
 #include "paging.hpp"
 #include "registers.hpp"
+
+static_assert(hal::page_size == PAGE_SIZE);
 
 namespace cpu
 {
@@ -60,7 +63,7 @@ void free_physical(void *page) noexcept
     {
         libk::DisableInteruptsPaging temp_disabler;
 
-        libk::clear_memory(page, PAGE_SIZE);
+        libk::clear_memory(page, page_size);
     }
 
     libk::SpinLock lock(physical_page_mutex);

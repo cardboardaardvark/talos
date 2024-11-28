@@ -38,6 +38,8 @@ add_library(
     crt0.asm
 )
 
+target_compile_definitions(talos-crt PRIVATE PAGE_SIZE=${TALOS_PAGE_SIZE})
+
 set(CRT0_O ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/talos-crt.dir/crt0.asm.o)
 
 set(
@@ -50,9 +52,9 @@ add_executable(
     talos-bin
 
     console.cpp
+    init.cpp
     logging.cpp
     serial.cpp
-    start.cpp
 )
 
 add_dependencies(talos-bin talos-crt)

@@ -3,10 +3,11 @@
 #include "console.hpp"
 #include "serial.hpp"
 
-#define SERIAL_PORT COM1_IO_PORT
+#define SERIAL_PORT 0x3F8
 #define SERIAL_SPEED 115200
 
 namespace platform
+
 {
 
 namespace ibmpc

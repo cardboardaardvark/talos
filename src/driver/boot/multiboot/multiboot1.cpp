@@ -15,20 +15,20 @@ namespace multiboot
 
 void dump_v1_info(const v1_info_t *info) noexcept
 {
-    libk::write_log("Multiboot 1 info:\n");
+    libk::print("Multiboot 1 info:\n");
 
-    libk::writef_log("\tflags: 0x%lx\n", info->flags);
+    libk::printf("\tflags: 0x%lx\n", info->flags);
 
-    if (info->flags & MULTIBOOT1_MEMORY_FLAG) {
-        libk::writef_log("\tmemory info: low=%u kb high=%u kb\n", info->lower_memory, info->higher_memory);
+    if (info->flags & v1_memory_flag) {
+        libk::printf("\tmemory info: low=%u kb high=%u kb\n", info->lower_memory, info->higher_memory);
     }
 
-    if (info->flags & MULTIBOOT1_CMDLINE_FLAG) {
-        libk::writef_log("\tcommand line: %s\n", info->command_line);
+    if (info->flags & v1_cmdline_flag) {
+        libk::printf("\tcommand line: %s\n", info->command_line);
     }
 
-    if (info->flags & MULTIBOOT1_BOOTLOADER_NAME_FLAG) {
-        libk::writef_log("\tBoot loader: %s\n", info->boot_loader_name);
+    if (info->flags & v1_bootloader_name_flag) {
+        libk::printf("\tBoot loader: %s\n", info->boot_loader_name);
     }
 
     dump_v1_memory_map(info->mmap_address, info->mmap_length);
@@ -43,13 +43,13 @@ static void dump_v1_memory_map_visitor(const v1_memory_map_t *map, void *)
         assert(map->address == (map->address & 0xFFFFFFFF));
 
         void *address = reinterpret_cast<void *>(map->address);
-        libk::writef_log("\tsize=%llu kb address=0x%p\n", map->length / 1024, address);
+        libk::printf("\tsize=%llu kb address=0x%p\n", map->length / 1024, address);
     }
 }
 
 void dump_v1_memory_map(std::uint64_t map_address, std::uint64_t length) noexcept
 {
-    libk::writef_log("Multiboot memory map:\n");
+    libk::printf("Multiboot memory map:\n");
     visit_v1_memory_map(map_address, length, dump_v1_memory_map_visitor, nullptr);
 }
 

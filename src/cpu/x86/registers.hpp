@@ -2,16 +2,15 @@
 
 #include <cstdint>
 
-#define CR0_ENABLE_PROTECTED_FLAG (1 << 0) // Protected mode
-#define CR0_ENABLE_PAGING_FLAG (1 << 31)
-
-#define FLAGS_INTERRUPT_ENABLE (1 << 9)
-
 namespace cpu
 {
 
 namespace x86
 {
+
+const unsigned int enable_interrupts_flag = 1 << 9;
+const unsigned int enable_paging_flag = 1 << 31;
+const unsigned int enable_protected_flag = 1 << 0;
 
 extern "C"
 {

@@ -47,13 +47,13 @@ void clear_memory(void *address, std::size_t bytes) noexcept
 
 bool is_page_aligned(const void *address) noexcept
 {
-    return reinterpret_cast<std::uintptr_t>(address) % PAGE_SIZE == 0;
+    return reinterpret_cast<std::uintptr_t>(address) % hal::page_size == 0;
 }
 
 void * align_page(void *address) noexcept
 {
     auto as_int = reinterpret_cast<uintptr_t>(address);
-    auto align_error = as_int % PAGE_SIZE;
+    auto align_error = as_int % hal::page_size;
 
     return reinterpret_cast<void *>(as_int - align_error);
 }
@@ -80,12 +80,12 @@ void map_identity_page(hal::page_directory_t directory, std::uintptr_t physical_
 
 void map_guard_page(hal::page_directory_t directory, const void *virtual_page) noexcept
 {
-    return map_virtual_page(directory, virtual_page, nullptr, PAGE_FLAG_NONE);
+    return map_virtual_page(directory, virtual_page, nullptr, hal::page_flag_none);
 }
 
 void map_guard_page(hal::page_directory_t directory, std::uintptr_t virtual_page) noexcept
 {
-    return map_virtual_page(directory, virtual_page, reinterpret_cast<uintptr_t>(nullptr), PAGE_FLAG_NONE);
+    return map_virtual_page(directory, virtual_page, reinterpret_cast<uintptr_t>(nullptr), hal::page_flag_none);
 }
 
 // void unmap_virtual_page(hal::page_directory_t directory, const void *virtual_page) noexcept;

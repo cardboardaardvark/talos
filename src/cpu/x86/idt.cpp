@@ -161,7 +161,7 @@ void handle_interrupt(interrupt_info_t *info) noexcept
         const char *description = idt_interrupt_description(info->number);
 
         if (info->number == EXCEPTION_TYPE_GPF) {
-            libk::writef_log("Address that caused GPF: 0x%p\n", gpf_address());
+            libk::printf("Address that caused GPF: 0x%p\n", gpf_address());
         }
 
         libk::panic("Got an exception: #%u %s; error: %u\n", info->number, description, info->error);
@@ -175,7 +175,7 @@ void handle_interrupt(interrupt_info_t *info) noexcept
         if (handler != nullptr) {
             handler(irq_number);
         } else if (! irq_did_warn[irq_number]) {
-            libk::writef_log("Warning: unhandled IRQ #%u\n", irq_number);
+            libk::printf("Warning: unhandled IRQ #%u\n", irq_number);
             irq_did_warn[irq_number] = true;
         }
 

@@ -45,7 +45,7 @@ int getentropy([[maybe_unused]] void *buffer, [[maybe_unused]] size_t length)
 
 _READ_WRITE_RETURN_TYPE write([[maybe_unused]] int file, const void *ptr, size_t len)
 {
-    libk::write_log(reinterpret_cast<const char *>(ptr), len);
+    libk::print(reinterpret_cast<const char *>(ptr), len);
 
     return len;
 }

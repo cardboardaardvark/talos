@@ -5,6 +5,13 @@
 
 #include "vga.hpp"
 
+#define VGA_BUFFER_ADDRESS 0xB8000
+#define VGA_COMMAND_PORT 0x3D4
+#define VGA_DATA_PORT 0x3D5
+
+#define VGA_CURSOR_POSITION_HIGH 14
+#define VGA_CUSOR_POSITION_LOW 15
+
 namespace driver
 {
 
@@ -43,7 +50,7 @@ character_t character(char c, Color fg, Color bg) noexcept
 // RESTRICT no dynamic memory
 void place_character(character_t character, std::uint8_t row, std::uint8_t column) noexcept
 {
-    buffer[row * VGA_WIDTH + column] = character;
+    buffer[row * screen_width + column] = character;
 }
 
 // RESTRICT no assert()
@@ -59,7 +66,7 @@ void place_string(const char* string, color_t color, std::uint8_t row, std::uint
 // RESTRICT No dynamic memory
 void place_cursor(std::uint8_t row, std::uint8_t column) noexcept
 {
-    std::uint16_t position = row * VGA_WIDTH + column;
+    std::uint16_t position = row * screen_width + column;
 
     x86::outb(VGA_COMMAND_PORT, VGA_CURSOR_POSITION_HIGH);
     x86::outb(VGA_DATA_PORT, position >> 8);
@@ -73,9 +80,9 @@ void place_cursor(std::uint8_t row, std::uint8_t column) noexcept
 // RESTRICT No dynamic memory
 void scroll(std::uint8_t start_row, std::uint8_t num_rows) noexcept
 {
-    character_t* start_row_addr = buffer + start_row * VGA_WIDTH;
-    character_t* next_row_addr = start_row_addr + VGA_WIDTH;
-    std::size_t copy_size = num_rows * VGA_WIDTH * sizeof(character_t);
+    character_t* start_row_addr = buffer + start_row * screen_width;
+    character_t* next_row_addr = start_row_addr + screen_width;
+    std::size_t copy_size = num_rows * screen_width * sizeof(character_t);
 
     // TODO Is there a way to pause updates to the display while large operations
     // are happening on the VGA buffer? Is this needed?

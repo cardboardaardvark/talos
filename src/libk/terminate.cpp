@@ -10,11 +10,11 @@ namespace libk
 {
     hal::enable_interrupts(false);
 
-    libk::write_log("Halting: ");
+    libk::print("Halting: ");
 
     while (true)
     {
-        libk::write_log(".");
+        libk::print(".");
         hal::wait();
     }
 }

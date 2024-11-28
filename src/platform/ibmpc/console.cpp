@@ -1,14 +1,17 @@
 #include <cstdint>
 #include <cstring>
 
+#include <config-memory.hpp>
 #include <driver/video/vga/vga.hpp>
 #include <libk/memory.hpp>
 #include <libk/mutex.hpp>
 #include <libk/string.hpp>
 #include <libk/util.hpp>
-#include <kernel/main.hpp>
+#include <kernel/timer.hpp>
 
 #include "console.hpp"
+
+namespace vga = driver::video::vga;
 
 #define CONSOLE_BG_COLOR vga::Color::black
 #define CONSOLE_FG_COLOR vga::Color::light_grey
@@ -17,12 +20,10 @@
 
 #define STATUS_ROW 0
 #define CONSOLE_FIRST_ROW 1
-#define CONSOLE_HEIGHT VGA_HEIGHT - CONSOLE_FIRST_ROW
+#define CONSOLE_HEIGHT vga::screen_height - CONSOLE_FIRST_ROW
 
 #define STATUS_CLOCK_WIDTH 8
-#define STATUS_MEMORY_WIDTH VGA_WIDTH - STATUS_CLOCK_WIDTH - 1
-
-namespace vga = driver::video::vga;
+#define STATUS_MEMORY_WIDTH vga::screen_width - STATUS_CLOCK_WIDTH - 1
 
 namespace platform
 {
@@ -44,7 +45,7 @@ static void _clear_status() noexcept
 {
     const auto status_blank = vga::character(' ', status_color);
 
-    for (unsigned int column = 0; column < VGA_WIDTH; column++) {
+    for (unsigned int column = 0; column < vga::screen_width; column++) {
         vga::place_character(status_blank, STATUS_ROW, column);
     }
 }
@@ -56,8 +57,8 @@ static void _clear_console() noexcept
 {
     const auto console_blank = vga::character(' ', console_color);
 
-    for (unsigned int row = CONSOLE_FIRST_ROW; row < VGA_HEIGHT; row++) {
-        for (unsigned int column = 0; column < VGA_WIDTH; column++) {
+    for (unsigned int row = CONSOLE_FIRST_ROW; row < vga::screen_height; row++) {
+        for (unsigned int column = 0; column < vga::screen_width; column++) {
             vga::place_character(console_blank, row, column);
         }
     }
@@ -96,7 +97,7 @@ void update_status_clock() noexcept
     minutes -= hours * 60;
 
     auto clock_face = libk::formatted_string("{:#02}:{:#02}:{:#02}", hours, minutes, seconds);
-    auto column_start = VGA_WIDTH - clock_face.length();
+    auto column_start = vga::screen_width - clock_face.length();
 
     {
         // Mutex is shared with ISRs
@@ -110,8 +111,8 @@ void update_status_clock() noexcept
 void update_status_memory() noexcept
 {
     auto memory_status = libk::memory_status();
-    auto available_kb = memory_status.physical.available_pages * PAGE_SIZE / 1024;
-    auto total_kb = memory_status.physical.total_pages * PAGE_SIZE / 1024;
+    auto available_kb = memory_status.physical.available_pages * hal::page_size / 1024;
+    auto total_kb = memory_status.physical.total_pages * hal::page_size / 1024;
     auto heap_kb = memory_status.paged.heap_size / 1024;
     auto content = libk::formatted_string("{} KiB / {} KiB / {} KiB", heap_kb, available_kb, total_kb);
 
@@ -150,7 +151,7 @@ void console_put_char(char c) noexcept
         platform::ibmpc::console_column++;
     }
 
-    if (platform::ibmpc::console_column > VGA_WIDTH) {
+    if (platform::ibmpc::console_column > vga::screen_width) {
         platform::ibmpc::console_column = 0;
         platform::ibmpc::console_line++;
     }
@@ -161,7 +162,7 @@ void console_put_char(char c) noexcept
         vga::scroll(CONSOLE_FIRST_ROW, CONSOLE_HEIGHT);
         platform::ibmpc::console_line = CONSOLE_HEIGHT - 1;
 
-        for (std::uint8_t column = 0; column < VGA_WIDTH; column++) {
+        for (std::uint8_t column = 0; column < vga::screen_width; column++) {
             vga::place_character(blank, CONSOLE_FIRST_ROW + platform::ibmpc::console_line, column);
         }
     }

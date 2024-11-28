@@ -12,16 +12,6 @@ namespace video
 namespace vga
 {
 
-#define VGA_BUFFER_ADDRESS 0xB8000
-#define VGA_COMMAND_PORT 0x3D4
-#define VGA_DATA_PORT 0x3D5
-
-#define VGA_CURSOR_POSITION_HIGH 14
-#define VGA_CUSOR_POSITION_LOW 15
-
-#define VGA_HEIGHT 25
-#define VGA_WIDTH 80
-
 using character_t = std::uint16_t;
 using color_t = std::uint8_t;
 
@@ -44,6 +34,9 @@ enum class Color : color_t
     light_brown = 14,
     white = 15,
 };
+
+const unsigned int screen_height = 25;
+const unsigned int screen_width = 80;
 
 extern character_t* buffer;
 

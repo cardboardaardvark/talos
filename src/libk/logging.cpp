@@ -1,5 +1,4 @@
 #include <cstdarg>
-#include <cstdio>
 
 #include <hal/io.hpp>
 
@@ -25,7 +24,7 @@ void _putchar(char c)
 namespace libk
 {
 
-void write_log(const char *message)
+void print(const char *message)
 {
     while (*message != '\0') {
         hal::log_put_char(*message);
@@ -33,7 +32,7 @@ void write_log(const char *message)
     }
 }
 
-void write_log(const char *message, std::size_t length)
+void print(const char *message, std::size_t length)
 {
     while(*message != '\0' && length-- > 0) {
         hal::log_put_char(*message);
@@ -41,15 +40,15 @@ void write_log(const char *message, std::size_t length)
     }
 }
 
-void writef_log(const char *format, ...)
+void printf(const char *format, ...)
 {
     std::va_list args;
     va_start(args, format);
-    vwritef_log(format, args);
+    vprintf(format, args);
     va_end(args);
 }
 
-void vwritef_log(const char *format, std::va_list args)
+void vprintf(const char *format, std::va_list args)
 {
     // Use mpaland's vprintf because it works only
     // using the stack and logging needs to work

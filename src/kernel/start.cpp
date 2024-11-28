@@ -1,13 +1,12 @@
+#include <config-timer.hpp>
 #include <hal/interrupt.hpp>
 #include <libk/error.hpp>
 #include <libk/logging.hpp>
 #include <libk/terminate.hpp>
 
 #include "job.hpp"
-#include "main.hpp"
+#include "start.hpp"
 #include "timer.hpp"
-
-#define KERNEL_FREQ 5000
 
 namespace kernel
 {
@@ -32,7 +31,7 @@ static ShutdownAction main_loop()
 static void init()
 {
     hal::set_tick_handler(isr_tick_handler);
-    hal::set_tick_frequency(KERNEL_FREQ);
+    hal::set_tick_frequency(hal::kernel_frequency);
 }
 
 // By the time control reaches here the following must be true:
@@ -52,11 +51,6 @@ extern "C" [[noreturn]] void start()
     }
 
     libk::panic("Unknown ShutdownAction: %u\n", static_cast<unsigned int>(action));
-}
-
-kernel_uptime_t uptime() noexcept
-{
-    return get_tick_count() / KERNEL_FREQ;
 }
 
 } // namespace kernel

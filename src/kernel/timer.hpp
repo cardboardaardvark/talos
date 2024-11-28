@@ -6,6 +6,7 @@
 namespace kernel
 {
 
+using kernel_uptime_t = uint32_t;
 using tick_counter_t = uint64_t;
 using timer_handler_t = std::function<void ()>;
 using timer_id_t = uint32_t;
@@ -32,5 +33,7 @@ timer_id_t start_timer(const interval_timer_t& config, timer_handler_t handler);
 // When this call returns the caller must be able to depend on nothing
 // that the timer does/did will happen in the future.
 bool cancel_timer(timer_id_t timer) noexcept;
+
+kernel_uptime_t uptime() noexcept;
 
 } // namespace kernel

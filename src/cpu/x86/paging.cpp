@@ -46,9 +46,9 @@ bool dump_page_directory_visitor(const page_directory_entry_t *directory_entry, 
     if (! (*directory_entry & page_entry_flag_present)) return true;
 
     if (table_entry == nullptr) {
-        libk::writef_log("Page directory entry: table_address=0x%p flags=0x%x\n", *directory_entry & page_frame_mask, *directory_entry & page_flag_mask);
+        libk::printf("Page directory entry: table_address=0x%p flags=0x%x\n", *directory_entry & page_frame_mask, *directory_entry & page_flag_mask);
     } else if (*table_entry & page_entry_flag_present) {
-        libk::writef_log("  Table entry: physical_address=0x%p flags=0x%x\n", *table_entry & page_frame_mask, *table_entry & page_flag_mask);
+        libk::printf("  Table entry: physical_address=0x%p flags=0x%x\n", *table_entry & page_frame_mask, *table_entry & page_flag_mask);
     }
 
     return true;
@@ -91,9 +91,9 @@ void enable_paging(bool enabled) noexcept
     auto cr0 = read_cr0();
 
     if (enabled) {
-        cr0 |= CR0_ENABLE_PAGING_FLAG;
+        cr0 |= enable_paging_flag;
     } else {
-        cr0 &= ~CR0_ENABLE_PAGING_FLAG;
+        cr0 &= ~enable_paging_flag;
     }
 
     write_cr0(cr0);
@@ -101,7 +101,7 @@ void enable_paging(bool enabled) noexcept
 
 bool paging_enabled() noexcept
 {
-    return read_cr0() & CR0_ENABLE_PAGING_FLAG;
+    return read_cr0() & enable_paging_flag;
 }
 
 void map_virtual_page(page_directory_t directory, const void* virtual_page, const void* physical_page, page_flags_t hal_flags) noexcept
@@ -111,9 +111,9 @@ void map_virtual_page(page_directory_t directory, const void* virtual_page, cons
     assert(libk::is_page_aligned(physical_page));
 
     page_entry_flags_t x86_flags = page_entry_flag_none;
-    if (hal_flags & PAGE_FLAG_PRESENT) x86_flags |= page_entry_flag_present;
-    if (hal_flags & PAGE_FLAG_RW) x86_flags |= page_entry_flag_rw;
-    if (hal_flags & PAGE_FLAG_USER) x86_flags |= page_entry_flag_user;
+    if (hal_flags & hal::page_flag_present) x86_flags |= page_entry_flag_present;
+    if (hal_flags & hal::page_flag_rw) x86_flags |= page_entry_flag_rw;
+    if (hal_flags & hal::page_flag_user) x86_flags |= page_entry_flag_user;
 
     auto directory_index = directory_entry_index(virtual_page);
     auto table_index = table_entry_index(virtual_page);

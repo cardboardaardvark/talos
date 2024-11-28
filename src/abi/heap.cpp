@@ -14,7 +14,7 @@
 // Maximum number of pages to extend by when using
 // an array of pointers allocated on the stack.
 #define STACK_ALLOCATE_MAX 128
-#define ALLOCATION_LIST_MAX_PAGES ((PAGE_SIZE - sizeof(struct allocation_list_s*) - sizeof(size_t)) / sizeof(void*))
+#define ALLOCATION_LIST_MAX_PAGES ((hal::page_size - sizeof(struct allocation_list_s*) - sizeof(size_t)) / sizeof(void*))
 
 namespace abi
 {
@@ -29,7 +29,7 @@ struct allocation_list_s
 
 using allocation_list_t = struct allocation_list_s;
 
-static_assert(sizeof(allocation_list_t) <= PAGE_SIZE);
+static_assert(sizeof(allocation_list_t) <= hal::page_size);
 
 libk::spin_mutex_t heap_mutex;
 void *heap_start = nullptr; // The start of the heap
@@ -42,8 +42,8 @@ static inline void extend_heap_allocated(void *physical_page) noexcept
 
     auto old_allocated = heap_next_allocation;
 
-    heap_next_allocation = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(heap_next_allocation) + PAGE_SIZE);
-    libk::map_virtual_page(hal::kernel_page_directory, old_allocated, physical_page, PAGE_FLAG_PRESENT | PAGE_FLAG_RW);
+    heap_next_allocation = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(heap_next_allocation) + hal::page_size);
+    libk::map_virtual_page(hal::kernel_page_directory, old_allocated, physical_page, hal::page_flag_present | hal::page_flag_rw);
 }
 
 static bool extend_using_stack(std::size_t num_pages) noexcept
@@ -195,9 +195,9 @@ static void * increase_break(ptrdiff_t increment)
 
     if (new_end > heap_next_allocation) {
         size_t need_bytes = reinterpret_cast<uintptr_t>(new_end) - reinterpret_cast<uintptr_t>(heap_next_allocation);
-        size_t need_pages = need_bytes / PAGE_SIZE;
+        size_t need_pages = need_bytes / hal::page_size;
 
-        if (need_bytes % PAGE_SIZE != 0) need_pages++;
+        if (need_bytes % hal::page_size != 0) need_pages++;
 
         if (! extend_address_space(need_pages)) {
             errno = ENOMEM;
@@ -225,10 +225,10 @@ static void * decrease_break(ptrdiff_t decrement)
     }
 
     auto need_bytes = reinterpret_cast<uintptr_t>(heap_next_allocation) - new_end;
-    auto need_pages = need_bytes / PAGE_SIZE;
+    auto need_pages = need_bytes / hal::page_size;
 
     for (size_t i = 0; i < need_pages; i++) {
-        heap_next_allocation = reinterpret_cast<void *>(reinterpret_cast<intptr_t>(heap_next_allocation) - PAGE_SIZE);
+        heap_next_allocation = reinterpret_cast<void *>(reinterpret_cast<intptr_t>(heap_next_allocation) - hal::page_size);
         if (! hal::unmap_virtual_page(hal::kernel_page_directory, heap_next_allocation)) libk::panic("Expected kernel virtual address 0x%p to have been mapped\n", heap_next_allocation);
     }
 
