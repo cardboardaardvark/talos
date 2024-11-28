@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -x
+set -e
+set -o pipefail
+
+SOURCE_ROOT="$1"
+BUILD_ROOT="$2"
+
+if [ "$SOURCE_ROOT" = '' ] || [ "$BUILD_ROOT" = "" ]; then
+    echo "Missing command line arguments" >&2
+    exit 1
+fi
+
+GRUB_CONFIG_SOURCE="${SOURCE_ROOT}/platform/ibmpc/grub.cfg"
+ISO_ROOT="${BUILD_ROOT}/grub-iso"
+ISO_FILE="${BUILD_ROOT}/grub.iso"
+GRUB_CFG="${ISO_ROOT}/boot/grub/grub.cfg"
+
+echo rm -rf "${ISO_ROOT}" "${ISO_FILE}"
+
+mkdir -p "$(dirname $GRUB_CFG)"
+cp "${GRUB_CONFIG_SOURCE}" "${GRUB_CFG}"
+cp "${BUILD_ROOT}/talos.bin" "${ISO_ROOT}"
+
+grub-mkrescue -o "${ISO_FILE}" "${ISO_ROOT}"

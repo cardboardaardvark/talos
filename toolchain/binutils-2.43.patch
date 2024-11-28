@@ -1,0 +1,106 @@
+diff -ru binutils-2.43/bfd/config.bfd binutils-2.43.talos/bfd/config.bfd
+--- binutils-2.43/bfd/config.bfd	2024-08-03 17:00:00.000000000 -0600
++++ binutils-2.43.talos/bfd/config.bfd	2024-11-19 17:07:02.983206683 -0700
+@@ -665,6 +665,11 @@
+     targ_selvecs=
+     targ64_selvecs=x86_64_elf64_vec
+     ;;
++  i[3-7]86-*-talos*)
++    targ_defvec=i386_elf32_vec
++    targ_selvecs=
++    targ64_selvecs=x86_64_elf64_vec
++    ;;
+ #ifdef BFD64
+   x86_64-*-cloudabi*)
+     targ_defvec=x86_64_elf64_cloudabi_vec
+@@ -729,6 +734,11 @@
+     targ_defvec=x86_64_elf64_vec
+     targ_selvecs=i386_elf32_vec
+     want64=true
++    ;;
++  x86_64-*-talos*)
++    targ_defvec=x86_64_elf64_vec
++    targ_selvecs=i386_elf32_vec
++    want64=true
+     ;;
+   x86_64-*-gnu*)
+     targ_defvec=x86_64_elf64_vec
+diff -ru binutils-2.43/config.sub binutils-2.43.talos/config.sub
+--- binutils-2.43/config.sub	2024-08-03 17:00:00.000000000 -0600
++++ binutils-2.43.talos/config.sub	2024-11-19 17:06:08.165508532 -0700
+@@ -1765,7 +1765,7 @@
+ 	     | scout* | superux* | sysv* | rtmk* | tpf* | windiss* \
+ 	     | powermax* | dnix* | nx6 | nx7 | sei* | dragonfly* \
+ 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
+-	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
++	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* | talos* \
+ 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+ 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
+ 	     | fiwix* | mlibc* | cos* | mbr* | ironclad* )
+diff -ru binutils-2.43/gas/configure.tgt binutils-2.43.talos/gas/configure.tgt
+--- binutils-2.43/gas/configure.tgt	2024-08-03 17:00:00.000000000 -0600
++++ binutils-2.43.talos/gas/configure.tgt	2024-11-19 17:07:43.865505703 -0700
+@@ -6,12 +6,12 @@
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation; either version 3 of the License, or
+ # (at your option) any later version.
+-# 
++#
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+-# 
++#
+ # You should have received a copy of the GNU General Public License
+ # along with this program; see the file COPYING3.  If not see
+ # <http://www.gnu.org/licenses/>.
+@@ -243,6 +243,7 @@
+     esac ;;
+   i386-*-lynxos*)			fmt=elf em=lynx ;;
+   i386-*-redox*)			fmt=elf ;;
++  i386-*-talos*)			fmt=elf ;;
+   i386-*-solaris*)			fmt=elf em=solaris ;;
+   i386-*-freebsd* \
+   | i386-*-kfreebsd*-gnu)		fmt=elf em=freebsd ;;
+@@ -339,7 +340,7 @@
+   moxie-*-uclinux)			fmt=elf em=linux ;;
+   moxie-*-moxiebox*)                    fmt=elf endian=little ;;
+   moxie-*-*)				fmt=elf ;;
+-    
++
+   mt-*-elf)				fmt=elf bfd_gas=yes ;;
+ 
+   msp430-*-*)				fmt=elf ;;
+@@ -428,7 +429,7 @@
+   wasm32-*-*)                           fmt=elf ;;
+ 
+   xstormy16-*-*)			fmt=elf ;;
+-  
++
+   xgate-*-*)    			fmt=elf ;;
+ 
+   xtensa*-*-*)				fmt=elf ;;
+diff -ru binutils-2.43/ld/configure.tgt binutils-2.43.talos/ld/configure.tgt
+--- binutils-2.43/ld/configure.tgt	2024-08-03 17:00:00.000000000 -0600
++++ binutils-2.43.talos/ld/configure.tgt	2024-11-19 17:08:42.559084838 -0700
+@@ -384,6 +384,9 @@
+ i[3-7]86-*-redox*)	targ_emul=elf_i386
+ 			targ_extra_emuls=elf_x86_64
+ 			;;
++i[3-7]86-*-talos*)	targ_emul=elf_i386
++			targ_extra_emuls=elf_x86_64
++			;;
+ i[3-7]86-*-solaris2*)	targ_emul=elf_i386_sol2
+ 			targ_extra_emuls="elf_i386_ldso elf_i386 elf_iamcu elf_x86_64_sol2 elf_x86_64"
+ 			targ_extra_libpath=$targ_extra_emuls
+@@ -1023,6 +1026,9 @@
+ x86_64-*-redox*)	targ_emul=elf_x86_64
+ 			targ_extra_emuls=elf_i386
+ 			;;
++x86_64-*-talos*)	targ_emul=elf_x86_64
++			targ_extra_emuls=elf_i386
++			;;
+ x86_64-*-solaris2*)	targ_emul=elf_x86_64_sol2
+ 			targ_extra_emuls="elf_x86_64 elf_i386_sol2 elf_i386_ldso elf_i386 elf_iamcu"
+ 			targ_extra_libpath=$targ_extra_emuls

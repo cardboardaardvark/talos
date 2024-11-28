@@ -1,0 +1,149 @@
+diff -ruN gcc-14.2.0/config.sub gcc-14.2.0.talos/config.sub
+--- gcc-14.2.0/config.sub	2024-08-01 02:17:13.000000000 -0600
++++ gcc-14.2.0.talos/config.sub	2024-11-19 17:42:52.048326011 -0700
+@@ -1746,7 +1746,7 @@
+ 	     | scout* | superux* | sysv* | rtmk* | tpf* | windiss* \
+ 	     | powermax* | dnix* | nx6 | nx7 | sei* | dragonfly* \
+ 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
+-	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
++	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* | talos* \
+ 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+ 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
+ 	     | fiwix* )
+diff -ruN gcc-14.2.0/fixincludes/mkfixinc.sh gcc-14.2.0.talos/fixincludes/mkfixinc.sh
+--- gcc-14.2.0/fixincludes/mkfixinc.sh	2024-08-01 02:17:13.000000000 -0600
++++ gcc-14.2.0.talos/fixincludes/mkfixinc.sh	2024-11-19 17:51:32.692788203 -0700
+@@ -11,6 +11,8 @@
+ 
+ # Check for special fix rules for particular targets
+ case $machine in
++    *-talos* | \
++    *-*-talos* | \
+     i?86-*-cygwin* | \
+     i?86-*-mingw32* | \
+     x86_64-*-mingw32* | \
+diff -ruN gcc-14.2.0/gcc/config/talos.h gcc-14.2.0.talos/gcc/config/talos.h
+--- gcc-14.2.0/gcc/config/talos.h	1969-12-31 17:00:00.000000000 -0700
++++ gcc-14.2.0.talos/gcc/config/talos.h	2024-11-19 18:24:39.473112493 -0700
+@@ -0,0 +1,25 @@
++/* Useful if you wish to make target-specific GCC changes. */
++#undef TARGET_TALOS
++#define TARGET_TALOS 1
++
++/* Default arguments you want when running your
++   i686-TALOS-gcc/x86_64-TALOS-gcc toolchain */
++#undef LIB_SPEC
++#define LIB_SPEC "-lc" /* link against C standard library */
++
++/* Files that are linked before user code.
++   The %s tells GCC to look for these files in the library directory. */
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++
++/* Files that are linked after user code. */
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++
++/* Additional predefined macros. */
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()      \
++  do {                                \
++    builtin_define ("__talos__");      \
++    builtin_assert ("system=talos");   \
++  } while(0);
+diff -ruN gcc-14.2.0/gcc/config.gcc gcc-14.2.0.talos/gcc/config.gcc
+--- gcc-14.2.0/gcc/config.gcc	2024-08-01 02:17:14.000000000 -0600
++++ gcc-14.2.0.talos/gcc/config.gcc	2024-11-19 23:18:51.915610750 -0700
+@@ -187,7 +187,7 @@
+ #			the --with-sysroot configure option or the
+ #			--sysroot command line option is used this
+ #			will be relative to the sysroot.
+-# target_type_format_char 
++# target_type_format_char
+ # 			The default character to be used for formatting
+ #			the attribute in a
+ #			.type symbol_name, ${t_t_f_c}<property>
+@@ -631,6 +631,13 @@
+ fi
+ 
+ case ${target} in
++*-*-talos*)
++	extra_options="$extra_options gnu-user.opt"
++	gas=yes
++	gnu_ld=yes
++	default_use_cxa_atexit=yes
++	use_gcc_stdint=provide
++	;;
+ aarch64*-*-*)
+ 	tm_p_file="${tm_p_file} arm/aarch-common-protos.h"
+ 	case ${with_abi} in
+@@ -1189,6 +1196,12 @@
+ esac
+ 
+ case ${target} in
++i[34567]86-*-talos*)
++    tm_file="${tm_file} i386/unix.h i386/att.h elfos.h glibc-stdint.h i386/i386elf.h talos.h"
++    ;;
++x86_64-*-talos*)
++    tm_file="${tm_file} i386/unix.h i386/att.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h talos.h"
++    ;;
+ aarch64*-*-elf | aarch64*-*-fuchsia* | aarch64*-*-rtems*)
+ 	tm_file="${tm_file} elfos.h newlib-stdint.h"
+ 	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-errata.h aarch64/aarch64-elf-raw.h"
+diff -ruN gcc-14.2.0/libgcc/config.host gcc-14.2.0.talos/libgcc/config.host
+--- gcc-14.2.0/libgcc/config.host	2024-08-01 02:17:17.000000000 -0600
++++ gcc-14.2.0.talos/libgcc/config.host	2024-11-19 18:26:54.311971065 -0700
+@@ -103,7 +103,7 @@
+ 	;;
+ avr-*-*)
+ 	cpu_type=avr
+-	;;    
++	;;
+ bfin*-*)
+ 	cpu_type=bfin
+ 	;;
+@@ -409,6 +409,14 @@
+ esac
+ 
+ case ${host} in
++i[34567]86-*-talos*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
++x86_64-*-talos*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
++	;;
+ aarch64*-*-elf | aarch64*-*-rtems*)
+ 	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
+ 	extra_parts="$extra_parts crtfastmath.o"
+diff -ruN gcc-14.2.0/libstdc++-v3/crossconfig.m4 gcc-14.2.0.talos/libstdc++-v3/crossconfig.m4
+--- gcc-14.2.0/libstdc++-v3/crossconfig.m4	2024-08-01 02:17:18.000000000 -0600
++++ gcc-14.2.0.talos/libstdc++-v3/crossconfig.m4	2024-11-19 18:25:03.672189057 -0700
+@@ -90,7 +90,7 @@
+ 
+   *-freebsd*)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+-    AC_SUBST(SECTION_FLAGS) 
++    AC_SUBST(SECTION_FLAGS)
+     GLIBCXX_CHECK_LINKER_FEATURES
+     AC_DEFINE(HAVE_SETENV)
+     AC_DEFINE(HAVE_FINITEF)
+@@ -200,7 +200,7 @@
+     ;;
+   *-netbsd* | *-openbsd*)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+-    AC_SUBST(SECTION_FLAGS) 
++    AC_SUBST(SECTION_FLAGS)
+     GLIBCXX_CHECK_LINKER_FEATURES
+     AC_DEFINE(HAVE_FINITEF)
+     AC_DEFINE(HAVE_FINITE)
+@@ -221,7 +221,7 @@
+     ;;
+   *-qnx6.1* | *-qnx6.2*)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+-    AC_SUBST(SECTION_FLAGS) 
++    AC_SUBST(SECTION_FLAGS)
+     GLIBCXX_CHECK_LINKER_FEATURES
+     AC_DEFINE(HAVE_COSF)
+     AC_DEFINE(HAVE_COSL)
