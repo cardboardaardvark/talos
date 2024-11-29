@@ -132,7 +132,7 @@ static hal::page_directory_t identity_map_kernel_memory(hal::page_directory_t pa
     assert(kernel_end != nullptr);
     assert(libk::is_page_aligned(kernel_end));
 
-    const auto map_start = hal::page_size;
+    const auto map_start = 0;
 
     libk::printf("Identity mapping from 0x%p to 0x%p\n", map_start, kernel_end);
 
@@ -177,7 +177,6 @@ static void init_guard_pages(hal::page_directory_t page_directory, void *kernel_
     assert(libk::is_page_aligned(&_stack_top_guard));
 
     // Set 0x0 as a guard page so attempting to dereference a null pointer causes a GPF.
-    libk::map_guard_page(page_directory, nullptr);
     libk::map_guard_page(page_directory, &_stack_bottom_guard);
     libk::map_guard_page(page_directory, &_stack_top_guard);
     libk::map_guard_page(page_directory, kernel_guard_page);
