@@ -8,6 +8,7 @@
 #include <cpu/x86/memory.hpp>
 #include <cpu/x86/paging.hpp>
 #include <cpu/x86/registers.hpp>
+#include <driver/acpi/acpi.hpp>
 #include <driver/boot/multiboot/multiboot1.hpp>
 #include <hal/interrupt.hpp>
 #include <hal/memory.hpp>
@@ -30,6 +31,7 @@ namespace platform
 namespace ibmpc
 {
 
+namespace acpi = driver::acpi;
 namespace multiboot = driver::boot::multiboot;
 namespace x86 = cpu::x86;
 
@@ -227,6 +229,9 @@ extern "C" void init(multiboot::v1_multiboot_magic_t multiboot_magic, const mult
     x86::init_idt();
     abi::init_heap(kernel_heap);
     init_status();
+
+    acpi::initialize_subsystem();
+    acpi::initialize_tables();
 
     libk::print("Platform initialization complete\n");
 }

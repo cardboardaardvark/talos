@@ -9,6 +9,8 @@ extern "C"
 void * dlcalloc(size_t nmemb, size_t size);
 void dlfree(void *ptr);
 void * dlmalloc(size_t size);
+void * dlmemalign(size_t, size_t);
+int dlposix_memalign(void**, size_t, size_t);
 void * dlrealloc(void *ptr, size_t size);
 
 // The memory allocation functions can be called from inside and outside of
@@ -35,6 +37,16 @@ void * malloc(size_t bytes)
 {
     libk::DisableInterrupts guard;
     return dlmalloc(bytes);
+}
+
+void * memalign(size_t alignment, size_t size)
+{
+    return dlmemalign(alignment, size);
+}
+
+int posix_memalign(void **memptr, size_t alignment, size_t size)
+{
+    return dlposix_memalign(memptr, alignment, size);
 }
 
 void * realloc(void *ptr, size_t size)

@@ -4,6 +4,8 @@
 #include <cpu/x86/io.hpp>
 #include <libk/error.hpp>
 #include <libk/logging.hpp>
+#include <libk/mutex.hpp>
+#include <platform/ibmpc/link.hpp>
 
 [[noreturn]] static void not_implemented(const char *function_name)
 {
@@ -27,11 +29,11 @@ ACPI_STATUS AcpiOsTerminate()
 
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer()
 {
-    ACPI_PHYSICAL_ADDRESS addr = 0;
+    ACPI_PHYSICAL_ADDRESS table_address;
 
-    AcpiFindRootPointer(&addr);
+    AcpiFindRootPointer(&table_address);
 
-    return addr;
+    return table_address;
 }
 
 ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES *PredefinedObject, ACPI_STRING *NewValue)
@@ -50,7 +52,13 @@ ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER *ExistingTable, ACPI_TABLE_HEA
 
 void * AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
 {
-    not_implemented("AcpiOsMapMemory");
+
+    // This portion of RAM is identity mapped
+    if (PhysicalAddress < 0x100000) {
+        return reinterpret_cast<void *>(PhysicalAddress);
+    }
+
+    libk::panic("AcpiOsMapMemory(0x%p, %u) unsupported\n", PhysicalAddress, Length);
 }
 
 void AcpiOsUnmapMemory(void *where, ACPI_SIZE length)
@@ -85,7 +93,8 @@ BOOLEAN AcpiOsWritable(void *Memory, ACPI_SIZE Length)
 
 ACPI_THREAD_ID AcpiOsGetThreadId()
 {
-    not_implemented("AcpiOsGetThreadId");
+    // This only works while the kernel is single threaded
+    return 1;
 }
 
 ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE Type, ACPI_OSD_EXEC_CALLBACK Function, void *Context)
@@ -105,62 +114,79 @@ void AcpiOsStall(UINT32 Microseconds)
 
 ACPI_STATUS AcpiOsCreateMutex (ACPI_MUTEX *OutHandle)
 {
-    not_implemented("AcpiOsCreateMutex");
+    // While single threaded it should be fine to not use any mutex, right?
+    *OutHandle = nullptr;
+
+    return AE_OK;
+
 }
 
 void AcpiOsDeleteMutex(ACPI_MUTEX Handle)
 {
-    not_implemented("AcpiOsDeleteMutex");
+    // While single threaded it should be fine to not use any mutex, right?
+    return;
 }
 
 ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX Handle, UINT16 Timeout)
 {
-    not_implemented("AcpiOsAcquireMutex");
+    // While single threaded it should be fine to not use any mutex, right?
+    return AE_OK;
 }
 
 void AcpiOsReleaseMutex(ACPI_MUTEX Handle)
 {
-    not_implemented("AcpiOsReleaseMutex");
+    // While single threaded it should be fine to not use any mutex, right?
+    return;
 }
 
 ACPI_STATUS AcpiOsCreateSemaphore(UINT32 MaxUnits, UINT32 InitialUnits, ACPI_SEMAPHORE *OutHandle)
 {
-    not_implemented("AcpiOsCreateSemaphore");
+    // Should be fine while single threaded, right?
+    *OutHandle = nullptr;
+
+    return AE_OK;
 }
 
 ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE Handle)
 {
-    not_implemented("AcpiOsDeleteSemaphore");
+    // Should be fine while single threaded, right?
+    return AE_OK;
 }
 
 ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE Handle, UINT32 Units, UINT16 Timeout)
 {
-    not_implemented("AcpiOsWaitSemaphore");
+    // Should be fine while single threaded, right?
+    return AE_OK;
 }
 
 ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE Handle, UINT32 Units)
 {
-    not_implemented("AcpiOsSignalSemaphore");
+    // Should be fine while single threaded, right?
+    return AE_OK;
 }
 
 ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *OutHandle)
 {
-    not_implemented("AcpiOsCreateLock");
+    *OutHandle = new(libk::isr_spin_mutex_t);
+
+    return AE_OK;
 }
 
 void AcpiOsDeleteLock(ACPI_HANDLE Handle)
 {
-    not_implemented("AcpiOsDeleteLock");
+    delete(reinterpret_cast<libk::isr_spin_mutex_t *>(Handle));
 }
 
 ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK Handle)
 {
-    not_implemented("AcpiOsAcquireLock");
+    // Docs say single threaded implementations can skip locking
+    return AE_OK;
 }
 
 void AcpiOsReleaseLock(ACPI_SPINLOCK Handle, ACPI_CPU_FLAGS Flags)
 {
-    not_implemented("AcpiOsReleaseLock");
+    // Docs say single threaded implementations can skip locking
+    return;
 }
 
 ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 InterruptLevel, ACPI_OSD_HANDLER Handler, void *Context)
