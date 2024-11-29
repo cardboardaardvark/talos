@@ -8,7 +8,8 @@ namespace kernel
 
 enum class ShutdownAction : unsigned int
 {
-    halt = 0,
+    halt = 1,
+    poweroff = 2,
 };
 
 extern "C" [[noreturn]] void start();

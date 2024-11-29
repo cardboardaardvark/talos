@@ -1,5 +1,6 @@
 #include <config-timer.hpp>
 #include <hal/interrupt.hpp>
+#include <hal/terminate.hpp>
 #include <libk/error.hpp>
 #include <libk/logging.hpp>
 #include <libk/terminate.hpp>
@@ -13,19 +14,19 @@ namespace kernel
 
 static ShutdownAction main_loop()
 {
-    while(true) {
-        while (true) {
-            auto job = take_job();
+    // while(true) {
+    //     while (true) {
+    //         auto job = take_job();
 
-            if (job == nullptr) break;
+    //         if (job == nullptr) break;
 
-            job();
-        }
+    //         job();
+    //     }
 
-        hal::wait();
-    }
+    //     hal::wait();
+    // }
 
-    return ShutdownAction::halt;
+    return ShutdownAction::poweroff;
 }
 
 static void init()
@@ -47,6 +48,7 @@ extern "C" [[noreturn]] void start()
     auto action = main_loop();
 
     switch (action) {
+        case ShutdownAction::poweroff: hal::poweroff();
         case ShutdownAction::halt: libk::halt();
     }
 

@@ -1,4 +1,4 @@
 namespace hal
 {
-    void poweroff();
+    [[noreturn]] void poweroff();
 } // namespace hal
