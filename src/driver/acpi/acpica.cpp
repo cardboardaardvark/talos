@@ -7,6 +7,8 @@
 #include <libk/mutex.hpp>
 #include <platform/ibmpc/link.hpp>
 
+const intptr_t identity_map_end = 0x100000;
+
 [[noreturn]] static void not_implemented(const char *function_name)
 {
     libk::panic("%s() is not yet implemented\n", function_name);
@@ -53,17 +55,23 @@ ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER *ExistingTable, ACPI_TABLE_HEA
 void * AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
 {
 
-    // This portion of RAM is identity mapped
-    if (PhysicalAddress < 0x100000) {
+    // No need to map the identity mapped region
+    if (PhysicalAddress < identity_map_end) {
         return reinterpret_cast<void *>(PhysicalAddress);
     }
 
-    libk::panic("AcpiOsMapMemory(0x%p, %u) unsupported\n", PhysicalAddress, Length);
+    libk::panic("AcpiOsMapMemory(0x%llx, %u) unsupported\n", PhysicalAddress, Length);
 }
 
-void AcpiOsUnmapMemory(void *where, ACPI_SIZE length)
+void AcpiOsUnmapMemory(void *LogicalAddress, ACPI_SIZE Length)
 {
-    not_implemented("AcpiOsUnmapMemory");
+
+    // No need to unmap the identity mapped region
+    if (reinterpret_cast<intptr_t>(LogicalAddress) < identity_map_end) {
+        return;
+    }
+
+    libk::panic("AcpiOsUnmapMemory(0x%p, %u) unsupported\n", LogicalAddress, Length);
 }
 
 ACPI_STATUS AcpiOsGetPhysicalAddress(void *LogicalAddress, ACPI_PHYSICAL_ADDRESS *PhysicalAddress)
