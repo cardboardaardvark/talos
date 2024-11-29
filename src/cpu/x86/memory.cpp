@@ -3,6 +3,7 @@
 #include <config-memory.hpp>
 #include <hal/memory.hpp>
 #include <libk/assert.hpp>
+#include <libk/logging.hpp>
 #include <libk/memory.hpp>
 #include <libk/mutex.hpp>
 
@@ -55,7 +56,8 @@ void * alloc_physical() noexcept
 
     num_physical_pages--;
 
-    return physical_pages[num_physical_pages].address;
+    auto physical_address = physical_pages[num_physical_pages].address;
+    return physical_address;
 }
 
 void free_physical(void *page) noexcept
@@ -82,6 +84,19 @@ std::size_t available_physical_pages() noexcept
     libk::SpinLock lock(physical_page_mutex);
 
     return num_physical_pages;
+}
+
+bool physical_page_available(const void *physical_page) noexcept
+{
+    assert(libk::is_page_aligned(physical_page));
+
+    libk::SpinLock lock(physical_page_mutex);
+
+    for (size_t i = 0; i < num_physical_pages; i++) {
+        if (physical_pages[i].address == physical_page) return true;
+    }
+
+    return false;
 }
 
 } // namespace hal

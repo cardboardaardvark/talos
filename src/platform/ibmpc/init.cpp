@@ -105,17 +105,22 @@ static void * init_physical_pages(uint64_t length, uint64_t map_address)
     auto kernel_end = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(&_link_end) + hal::page_size);
 
     libk::printf("kernel_end=0x%p map_address=0x%p length=0x%p\n", kernel_end, map_address, length);
+    x86::set_physical_page_list_address(kernel_end);
 
     physical_page_visitor_args_t visitor_args = {
         .kernel_end = kernel_end,
     };
 
-    x86::set_physical_page_list_address(kernel_end);
+    // The first count slightly overcounts the number of pages that will be available
     multiboot::visit_v1_memory_map(map_address, length, count_physical_pages, &visitor_args);
+
+    // The second count gets slightly less available pages because it now accounts for the physical pages
+    // being used by the available physical page list
+    kernel_end = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(kernel_end) + visitor_args.num_pages * sizeof(x86::physical_page_entry_t));
+    visitor_args.kernel_end = kernel_end;
     multiboot::visit_v1_memory_map(map_address, length, load_physical_pages, &visitor_args);
 
     total_physical_pages = hal::available_physical_pages();
-    kernel_end = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(kernel_end) + total_physical_pages * sizeof(x86::physical_page_entry_t));
 
     libk::printf("Found %u physical pages; new kernel end: 0x%p\n", visitor_args.num_pages, kernel_end);
     libk::printf("Available physical memory: %u KiB\n", hal::available_physical_pages() * hal::page_size / 1024);
@@ -136,8 +141,7 @@ static hal::page_directory_t identity_map_kernel_memory(hal::page_directory_t pa
 
     libk::printf("Identity mapping from 0x%p to 0x%p\n", map_start, kernel_end);
 
-    // Identity map everything from the 2nd page to the end of the kernel
-    // in memory.
+    // Identity map everything from the start of memory to the end of the kernel in memory.
     for (uintptr_t address = map_start; address <= reinterpret_cast<uintptr_t>(kernel_end); address += hal::page_size) {
         libk::map_identity_page(page_directory, address, hal::page_flag_present | hal::page_flag_rw);
     }
@@ -186,7 +190,6 @@ static void * init_paging(void *kernel_end)
 {
     auto kernel_guard_page = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(kernel_end) + hal::page_size);
     auto kernel_heap = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(kernel_guard_page) + hal::page_size);
-
     auto page_directory = reinterpret_cast<hal::page_directory_t>(hal::alloc_physical());
 
     if (page_directory == nullptr) libk::panic("Could not allocate a page directory table\n");
@@ -229,8 +232,8 @@ extern "C" void init(multiboot::v1_multiboot_magic_t multiboot_magic, const mult
     abi::init_heap(kernel_heap);
     init_status();
 
-    acpi::initialize_subsystem();
-    acpi::initialize_tables();
+    // acpi::initialize_subsystem();
+    // acpi::initialize_tables();
 
     libk::print("Platform initialization complete\n");
 }

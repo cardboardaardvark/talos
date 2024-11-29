@@ -104,11 +104,29 @@ bool paging_enabled() noexcept
     return read_cr0() & enable_paging_flag;
 }
 
+// void * map_physical_page(page_directory_t directory, const void *physical_page, page_flags_t flags) noexcept
+// {
+//     assert(libk::is_page_aligned(physical_page));
+//     // If the physical page exists in the free physical page list then an attempt to map it is
+//     // surely a mistake
+//     assert(! physical_page_available(physical_page));
+
+
+// }
+
+// bool unmap_physical_page(page_directory_t directory, const void *physical_page) noexcept
+// {
+
+// }
+
 void map_virtual_page(page_directory_t directory, const void* virtual_page, const void* physical_page, page_flags_t hal_flags) noexcept
 {
     assert(directory != nullptr);
     assert(libk::is_page_aligned(virtual_page));
     assert(libk::is_page_aligned(physical_page));
+    // If the physical page exists in the free physical page list then an attempt to map it is
+    // surely a mistake
+    assert(! physical_page_available(physical_page));
 
     page_entry_flags_t x86_flags = page_entry_flag_none;
     if (hal_flags & hal::page_flag_present) x86_flags |= page_entry_flag_present;
