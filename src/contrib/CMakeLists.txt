@@ -1,3 +1,5 @@
+add_subdirectory(acpica/)
+
 add_library(
     contrib-malloc STATIC
     EXCLUDE_FROM_ALL
