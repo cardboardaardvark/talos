@@ -43,7 +43,7 @@ static inline void extend_heap_allocated(void *physical_page) noexcept
     auto old_allocated = heap_next_allocation;
 
     heap_next_allocation = reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(heap_next_allocation) + hal::page_size);
-    libk::map_virtual_page(hal::kernel_page_directory, old_allocated, physical_page, hal::page_flag_present | hal::page_flag_rw);
+    libk::map_virtual_page(hal::kernel_page_directory, old_allocated, physical_page, hal::page_flag_present | hal::page_flag_rw | hal::page_flag_allocated);
 }
 
 static bool extend_using_stack(std::size_t num_pages) noexcept
@@ -278,6 +278,13 @@ size_t heap_size() noexcept
     libk::SpinLock lock(heap_mutex);
 
     return reinterpret_cast<uintptr_t>(heap_next_allocation) - reinterpret_cast<uintptr_t>(heap_start);
+}
+
+const void * next_heap_allocation() noexcept
+{
+    libk::SpinLock lock(heap_mutex);
+
+    return heap_next_allocation;
 }
 
 } // namespace hal

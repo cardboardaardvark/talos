@@ -17,6 +17,7 @@ const unsigned int page_flag_none = 0;
 const unsigned int page_flag_user = 1 << 0;
 const unsigned int page_flag_rw = 1 << 1;
 const unsigned int page_flag_present = 1 << 2;
+const unsigned int page_flag_allocated = 1 << 3;
 
 void * alloc_physical() noexcept;
 void free_physical(void *page) noexcept;
@@ -36,5 +37,6 @@ bool unmap_virtual_page(page_directory_t directory, const void *virtual_page) no
 void flush_virtual_page(const void *page) noexcept;
 void flush_tlb() noexcept;
 size_t heap_size() noexcept;
+const void * next_heap_allocation() noexcept;
 
 } // namespace hal

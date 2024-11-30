@@ -22,6 +22,9 @@ const page_entry_flags_t page_entry_flag_present = 1 << 0;
 const page_entry_flags_t page_entry_flag_rw = 1 << 1;
 const page_entry_flags_t page_entry_flag_user = 1 << 2;
 const page_entry_flags_t page_entry_flag_inuse = 1 << 9;
+// True if the physical address for the page table entry
+// was allocated.
+const page_entry_flags_t page_entry_flag_allocated = 1 << 10;
 
 using page_table_entry_t = uint32_t;
 using page_table_t = page_table_entry_t *;

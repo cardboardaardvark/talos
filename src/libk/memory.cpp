@@ -45,9 +45,14 @@ void clear_memory(void *address, std::size_t bytes) noexcept
     std::memset(address, 0, bytes);
 }
 
+bool is_page_aligned(uintptr_t address) noexcept
+{
+    return address % hal::page_size == 0;
+}
+
 bool is_page_aligned(const void *address) noexcept
 {
-    return reinterpret_cast<std::uintptr_t>(address) % hal::page_size == 0;
+    return is_page_aligned(reinterpret_cast<std::uintptr_t>(address));
 }
 
 void * align_page(void *address) noexcept

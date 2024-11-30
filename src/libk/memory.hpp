@@ -54,6 +54,7 @@ memory_status_t memory_status() noexcept;
 
 void free_physical(void *page) noexcept;
 void clear_memory(void *address, std::size_t bytes) noexcept;
+bool is_page_aligned(uintptr_t address) noexcept;
 bool is_page_aligned(const void *address) noexcept;
 void * align_page(void *address) noexcept;
 const void * align_page(const void * address) noexcept;

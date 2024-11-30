@@ -2,6 +2,7 @@
 #include <cstdarg>
 
 #include <cpu/x86/io.hpp>
+#include <libk/memory.hpp>
 #include <libk/error.hpp>
 #include <libk/logging.hpp>
 #include <libk/mutex.hpp>
@@ -59,6 +60,8 @@ void * AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
     if (PhysicalAddress < identity_map_end) {
         return reinterpret_cast<void *>(PhysicalAddress);
     }
+
+    auto virtual_address = libk::map_physical_address(hal::kernel_page_directory, reinterpret_cast<void *>(PhysicalAddress), hal::page_flag_present | hal::page_flag_rw);
 
     libk::panic("AcpiOsMapMemory(0x%llx, %u) unsupported\n", PhysicalAddress, Length);
 }

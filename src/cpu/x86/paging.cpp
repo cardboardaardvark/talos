@@ -1,6 +1,7 @@
 #include <libk/assert.hpp>
 #include <libk/logging.hpp>
 #include <libk/memory.hpp>
+#include <platform/ibmpc/link.hpp>
 
 #include "paging.hpp"
 #include "registers.hpp"
@@ -11,14 +12,68 @@ namespace cpu
 namespace x86
 {
 
+static inline size_t directory_entry_index(const uintptr_t virtual_page) noexcept
+{
+    return (virtual_page & page_directory_entry_mask) >> page_directory_entry_shift;
+}
+
 static inline size_t directory_entry_index(const void* virtual_page) noexcept
 {
-    return (reinterpret_cast<uint32_t>(virtual_page) & page_directory_entry_mask) >> page_directory_entry_shift;
+    return directory_entry_index(reinterpret_cast<uint32_t>(virtual_page));
+}
+
+static inline size_t table_entry_index(const uintptr_t virtual_page) noexcept
+{
+    return (virtual_page & page_table_entry_mask) >> page_table_entry_shift;
 }
 
 static inline size_t table_entry_index(const void* virtual_page) noexcept
 {
-    return (reinterpret_cast<uint32_t>(virtual_page) & page_table_entry_mask) >> page_table_entry_shift;
+    return table_entry_index(reinterpret_cast<uint32_t>(virtual_page));
+}
+
+static void create_page_directory_table(page_directory_t directory, const uintptr_t virtual_page)
+{
+    assert(libk::is_page_aligned(virtual_page));
+
+    auto new_table = libk::alloc_physical<uint32_t*>();
+    auto directory_index = directory_entry_index(virtual_page);
+
+    // Yes pages from alloc_physical() are supposed to be page aligned
+    // and a page aligned address will never have bits true in the page offset.
+    // Might as well double check it with the assert() and leave a note that
+    // the assignment assumes the page offset is actually 0.
+    assert((reinterpret_cast<uint32_t>(new_table) & page_offset_mask) == 0);
+    directory[directory_index] = reinterpret_cast<uint32_t>(new_table) | page_entry_flag_present | page_entry_flag_rw | page_entry_flag_user;
+}
+
+static void create_page_directory_table(page_directory_t directory, const void *virtual_page)
+{
+    create_page_directory_table(directory, reinterpret_cast<uintptr_t>(virtual_page));
+}
+
+static void * find_free_virtual_page(page_directory_t directory)
+{
+    uintptr_t search_start = reinterpret_cast<uintptr_t>(&platform::ibmpc::_shared_start_virtual);
+    uintptr_t search_end = reinterpret_cast<uintptr_t>(hal::next_heap_allocation());
+
+    for (uintptr_t address = search_start; address >= search_end; address -= hal::page_size) {
+        auto directory_index = directory_entry_index(address);
+        auto table_index = table_entry_index(address);
+
+        if (! (directory[directory_index] & page_entry_flag_present)) {
+            create_page_directory_table(directory, address);
+        }
+
+        auto table = reinterpret_cast<const page_table_entry_t *>(directory[directory_index] & page_frame_mask);
+
+        if (! (table[table_index] & page_entry_flag_inuse)) {
+            libk::printf("Found free virtual page: 0x%x\n", address);
+            return reinterpret_cast<void *>(address);
+        }
+    }
+
+    return nullptr;
 }
 
 // The visitor will be called for each page directory entry with the table entry set to the null pointer.
@@ -104,34 +159,32 @@ bool paging_enabled() noexcept
     return read_cr0() & enable_paging_flag;
 }
 
-// void * map_physical_page(page_directory_t directory, const void *physical_page, page_flags_t flags) noexcept
-// {
-//     assert(libk::is_page_aligned(physical_page));
-//     // If the physical page exists in the free physical page list then an attempt to map it is
-//     // surely a mistake
-//     assert(! physical_page_available(physical_page));
+void * map_physical_page(page_directory_t directory, const void *physical_page, page_flags_t flags) noexcept
+{
+    assert(libk::is_page_aligned(physical_page));
+    // If the physical page exists in the free physical page list then an attempt to map it is surely a mistake
+    assert(! physical_page_available(physical_page));
 
+    auto virtual_page = find_free_virtual_page(directory);
 
-// }
+    if (virtual_page == nullptr) return nullptr;
 
-// bool unmap_physical_page(page_directory_t directory, const void *physical_page) noexcept
-// {
-
-// }
+    libk::panic("here 0x%x\n", flags);
+}
 
 void map_virtual_page(page_directory_t directory, const void* virtual_page, const void* physical_page, page_flags_t hal_flags) noexcept
 {
     assert(directory != nullptr);
     assert(libk::is_page_aligned(virtual_page));
     assert(libk::is_page_aligned(physical_page));
-    // If the physical page exists in the free physical page list then an attempt to map it is
-    // surely a mistake
+    // If the physical page exists in the free physical page list then an attempt to map it is surely a mistake
     assert(! physical_page_available(physical_page));
 
     page_entry_flags_t x86_flags = page_entry_flag_none;
     if (hal_flags & hal::page_flag_present) x86_flags |= page_entry_flag_present;
     if (hal_flags & hal::page_flag_rw) x86_flags |= page_entry_flag_rw;
     if (hal_flags & hal::page_flag_user) x86_flags |= page_entry_flag_user;
+    if (hal_flags & hal::page_flag_allocated) x86_flags |= page_entry_flag_allocated;
 
     auto directory_index = directory_entry_index(virtual_page);
     auto table_index = table_entry_index(virtual_page);
@@ -141,17 +194,12 @@ void map_virtual_page(page_directory_t directory, const void* virtual_page, cons
     libk::DisableInteruptsPaging temp_disabler;
 
     if (! (directory[directory_index] & page_entry_flag_present)) {
-        auto new_table = libk::alloc_physical<uint32_t*>();
-
-        // Yes pages from alloc_physical() are supposed to be page aligned
-        // and a page aligned address will never have bits true in the page offset.
-        // Might as well double check it with the assert() and leave a note that
-        // the assignment assumes the page offset is actually 0.
-        assert((reinterpret_cast<uint32_t>(new_table) & page_offset_mask) == 0);
-        directory[directory_index] = reinterpret_cast<uint32_t>(new_table) | page_entry_flag_present | page_entry_flag_rw | page_entry_flag_user;
+        create_page_directory_table(directory, virtual_page);
     }
 
     auto table = reinterpret_cast<uint32_t *>(directory[directory_index] & page_frame_mask);
+
+    assert(! (table[table_index] & page_entry_flag_inuse));
 
     // Like the assignment to the page directory double check assumptions about
     // alignment and note the assumption related to the page offset.
@@ -178,10 +226,14 @@ bool unmap_virtual_page(page_directory_t directory, const void* virtual_page) no
     // Can't unmap a virtual address if the virtual address isn't mapped
     if (! (table[table_index] & page_entry_flag_inuse)) return false;
 
-    auto physical_page = reinterpret_cast<void *>(table[table_index] & page_frame_mask);
+    if (table[table_index] & page_entry_flag_allocated) {
+        auto physical_page = reinterpret_cast<void *>(table[table_index] & page_frame_mask);
+
+        hal::free_physical(physical_page);
+    }
+
     table[table_index] = 0;
     flush_virtual_page(virtual_page);
-    hal::free_physical(physical_page);
 
     return true;
 }
