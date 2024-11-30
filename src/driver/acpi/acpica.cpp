@@ -61,9 +61,7 @@ void * AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
         return reinterpret_cast<void *>(PhysicalAddress);
     }
 
-    auto virtual_address = libk::map_physical_address(hal::kernel_page_directory, reinterpret_cast<void *>(PhysicalAddress), hal::page_flag_present | hal::page_flag_rw);
-
-    libk::panic("AcpiOsMapMemory(0x%llx, %u) unsupported\n", PhysicalAddress, Length);
+    return libk::map_physical_address(hal::kernel_page_directory, reinterpret_cast<void *>(PhysicalAddress), Length, hal::page_flag_present | hal::page_flag_rw);
 }
 
 void AcpiOsUnmapMemory(void *LogicalAddress, ACPI_SIZE Length)
@@ -227,7 +225,9 @@ UINT64 AcpiOsGetTimer (void)
 
 ACPI_STATUS AcpiOsPhysicalTableOverride (ACPI_TABLE_HEADER *ExistingTable, ACPI_PHYSICAL_ADDRESS *NewAddress, UINT32 *NewTableLength)
 {
-    not_implemented("AcpiOsPhysicalTableOverride");
+    *NewAddress = 0;
+
+    return AE_OK;
 }
 
 void ACPI_INTERNAL_VAR_XFACE AcpiOsPrintf (const char *Format, ...)

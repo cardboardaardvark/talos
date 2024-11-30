@@ -57,6 +57,8 @@ static void * find_free_virtual_page(page_directory_t directory)
     uintptr_t search_start = reinterpret_cast<uintptr_t>(&platform::ibmpc::_shared_start_virtual);
     uintptr_t search_end = reinterpret_cast<uintptr_t>(hal::next_heap_allocation());
 
+    libk::DisableInteruptsPaging paging_guard;
+
     for (uintptr_t address = search_start; address >= search_end; address -= hal::page_size) {
         auto directory_index = directory_entry_index(address);
         auto table_index = table_entry_index(address);
@@ -169,7 +171,9 @@ void * map_physical_page(page_directory_t directory, const void *physical_page, 
 
     if (virtual_page == nullptr) return nullptr;
 
-    libk::panic("here 0x%x\n", flags);
+    map_virtual_page(directory, virtual_page, physical_page, flags);
+
+    return virtual_page;
 }
 
 void map_virtual_page(page_directory_t directory, const void* virtual_page, const void* physical_page, page_flags_t hal_flags) noexcept

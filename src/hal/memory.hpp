@@ -31,7 +31,6 @@ bool paging_enabled() noexcept;
 void set_page_directory(page_directory_t directory) noexcept;
 page_directory_t get_page_directory() noexcept;
 void * map_physical_page(page_directory_t directory, const void *physical_page, page_flags_t flags) noexcept;
-bool unmap_physical_page(page_directory_t directory, const void *physical_page) noexcept;
 void map_virtual_page(page_directory_t directory, const void *virtual_page, const void *physical_page, page_flags_t flags) noexcept;
 bool unmap_virtual_page(page_directory_t directory, const void *virtual_page) noexcept;
 void flush_virtual_page(const void *page) noexcept;
