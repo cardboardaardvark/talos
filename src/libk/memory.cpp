@@ -87,19 +87,12 @@ void * map_physical_page(hal::page_directory_t directory, const void *physical_p
 
 uintptr_t map_physical_address(hal::page_directory_t directory, std::uintptr_t physical_address, size_t length, hal::page_flags_t flags) noexcept
 {
-    auto aligned_address = align_page(physical_address);
-
-    if (physical_address + length >= aligned_address + hal::page_size) {
-        libk::panic("map_physical_address() can't handle crossing a page boundary\n");
-    }
-
-    auto virtual_address = map_physical_page(directory, aligned_address, flags);
-    return virtual_address + physical_address - aligned_address;
+    return reinterpret_cast<uintptr_t>(hal::map_physical_address(directory, reinterpret_cast<const void *>(physical_address), length, flags));
 }
 
-void * map_physical_address([[maybe_unused]] hal::page_directory_t directory, [[maybe_unused]] const void *physical_address, [[maybe_unused]] size_t length, [[maybe_unused]] hal::page_flags_t flags) noexcept
+void * map_physical_address(hal::page_directory_t directory, const void *physical_address, size_t length, hal::page_flags_t flags) noexcept
 {
-    return reinterpret_cast<void *>(map_physical_address(directory, reinterpret_cast<uint32_t>(physical_address), length, flags));
+    return hal::map_physical_address(directory, physical_address, length, flags);
 }
 
 void map_virtual_page(hal::page_directory_t directory, const void *virtual_page, const void *physical_page, hal::page_flags_t flags) noexcept

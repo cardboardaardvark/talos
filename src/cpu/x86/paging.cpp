@@ -52,27 +52,37 @@ static void create_page_directory_table(page_directory_t directory, const void *
     create_page_directory_table(directory, reinterpret_cast<uintptr_t>(virtual_page));
 }
 
-static void * find_free_virtual_page(page_directory_t directory)
+// TODO This implementation is rather naive
+static void * find_free_virtual_page_span(page_directory_t directory, size_t num_pages)
 {
+    assert(num_pages > 0);
+
     uintptr_t search_start = reinterpret_cast<uintptr_t>(&platform::ibmpc::_shared_start_virtual);
     uintptr_t search_end = reinterpret_cast<uintptr_t>(hal::next_heap_allocation());
 
     libk::DisableInteruptsPaging paging_guard;
 
-    for (uintptr_t address = search_start; address >= search_end; address -= hal::page_size) {
-        auto directory_index = directory_entry_index(address);
-        auto table_index = table_entry_index(address);
+    for (auto start_address = search_start; start_address >= search_end; start_address -= hal::page_size * num_pages) {
+        bool page_in_use = false;
 
-        if (! (directory[directory_index] & page_entry_flag_present)) {
-            create_page_directory_table(directory, address);
+        for (size_t check_page = 0; check_page < num_pages; check_page++) {
+            auto check_address = start_address + hal::page_size * check_page;
+            auto directory_index = directory_entry_index(check_address);
+            auto table_index = table_entry_index(check_address);
+
+            if (! (directory[directory_index] & page_entry_flag_present)) {
+                create_page_directory_table(directory, check_address);
+            }
+
+            auto table = reinterpret_cast<const page_table_entry_t *>(directory[directory_index] & page_frame_mask);
+
+            if (table[table_index] & page_entry_flag_inuse) {
+                page_in_use = true;
+                break;
+            }
         }
 
-        auto table = reinterpret_cast<const page_table_entry_t *>(directory[directory_index] & page_frame_mask);
-
-        if (! (table[table_index] & page_entry_flag_inuse)) {
-            libk::printf("Found free virtual page: 0x%x\n", address);
-            return reinterpret_cast<void *>(address);
-        }
+        if (! page_in_use) return reinterpret_cast<void *>(start_address);
     }
 
     return nullptr;
@@ -167,13 +177,26 @@ void * map_physical_page(page_directory_t directory, const void *physical_page, 
     // If the physical page exists in the free physical page list then an attempt to map it is surely a mistake
     assert(! physical_page_available(physical_page));
 
-    auto virtual_page = find_free_virtual_page(directory);
+    auto virtual_page = find_free_virtual_page_span(directory, 1);
 
     if (virtual_page == nullptr) return nullptr;
 
     map_virtual_page(directory, virtual_page, physical_page, flags);
 
     return virtual_page;
+}
+
+void * map_physical_address(page_directory_t directory, const void *physical_address, size_t length, page_flags_t flags) noexcept
+{
+    auto physical = reinterpret_cast<uintptr_t>(physical_address);
+    auto aligned = libk::align_page(physical);
+
+    if (physical + length < aligned + hal::page_size) {
+        auto virtual_address = map_physical_page(directory, reinterpret_cast<void *>(aligned), flags);
+        return reinterpret_cast<void *>(reinterpret_cast<uint32_t>(virtual_address) + physical - aligned);
+    }
+
+    libk::panic("map_physical_address(0x%p, 0x%p, %u, 0x%x): can't handle crossing a page boundary\n", directory, physical_address, length, flags);
 }
 
 void map_virtual_page(page_directory_t directory, const void* virtual_page, const void* physical_page, page_flags_t hal_flags) noexcept
