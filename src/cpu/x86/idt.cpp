@@ -164,7 +164,7 @@ void handle_interrupt(interrupt_info_t *info) noexcept
             libk::printf("Address that caused GPF: 0x%p\n", gpf_address());
         }
 
-        libk::panic("Got an exception: #%u %s; error: %u\n", info->number, description, info->error);
+        libk::panic("Got an exception: #%u %s; eip=0x%p error=%u\n", info->number, description, info->eip, info->error);
     } else if (number <= IRQ_MAX_INTERRUPT_NUM) {
         unsigned int irq_number = info->number - (EXCEPTION_MAX_INTERRUPT_NUM + 1);
 
