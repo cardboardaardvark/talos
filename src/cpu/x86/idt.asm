@@ -17,7 +17,17 @@ idt_stub_common:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov eax, esp   ; Push us onto the stack - is this needed?
+
+    ; Make the base pointer something GDB will understand. This is for
+    ; 13 registers and 1 error code having already been pushed to the stack.
+    mov eax, [esp + 15 * 4]
+    push eax
+    push ebp
+    mov ebp, esp
+
+    ; make the address for the interrupt info struct point to the
+    ; right place in the stack after the GDB adjustment.
+    lea eax, [esp + 8]
     push eax
 
     ; make sure the kernel page directory will be used when executing
@@ -32,6 +42,9 @@ idt_stub_common:
     .execute_handler:
     mov eax, handle_interrupt
     call eax       ; A special call, preserves the 'eip' register
+
+    ; remove the GDB info
+    add esp, 8
 
     pop eax
     pop gs
