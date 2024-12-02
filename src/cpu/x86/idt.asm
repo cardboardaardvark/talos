@@ -21,6 +21,9 @@ idt_stub_common:
     ; Make the base pointer something GDB will understand. This is for
     ; 13 registers and 1 error code having already been pushed to the stack.
     mov eax, [esp + 15 * 4]
+    ; The CPU pushed where continuation should happen not where the fault occurred.
+    ; Make up the gap.
+    add eax, 1
     push eax
     push ebp
     mov ebp, esp
