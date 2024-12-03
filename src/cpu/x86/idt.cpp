@@ -146,7 +146,7 @@ const char* idt_interrupt_description(uint32_t interrupt_number) noexcept
 }
 
 // Interrupts are disabled when this function is called from idt.asm
-void handle_interrupt(interrupt_info_t *info) noexcept
+void handle_interrupt(const interrupt_info_t *info) noexcept
 {
     assert(info->number < IDT_SIZE);
 

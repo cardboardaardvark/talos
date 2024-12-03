@@ -40,7 +40,7 @@ extern "C"
 {
     extern idt_stub_t idt_stub_table[];
 
-    void handle_interrupt(interrupt_info_t *info) noexcept;
+    void handle_interrupt(const interrupt_info_t *info) noexcept;
 }
 
 void init_idt() noexcept;
