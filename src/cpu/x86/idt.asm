@@ -58,7 +58,7 @@ idt_stub_common:
     ; continue at the place the fault happened.
     call maybe_adjust_return
 
-    ; put together a new call frame for GDB
+    ; put together a new frame pointer for GDB
     push eax
     push ebp
     mov ebp, esp
@@ -80,15 +80,15 @@ idt_stub_common:
     pop ds
 
     ; use the original page directory if it is different from the kernel page directory
-    mov eax, [kernel_page_directory]
-    pop ebx
-    cmp eax, ebx
+    pop eax
+    mov ecx, [kernel_page_directory]
+    cmp eax, ecx
     je .continue_return
 
-    mov cr3, ebx
+    mov cr3, eax
 
     .continue_return:
-    popa ; pop general purpose registers
+    popa ; restore general purpose registers
     add esp, 8     ; Cleans up the pushed error code and ISR number
     iret           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP!
 
