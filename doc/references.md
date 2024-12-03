@@ -1,3 +1,4 @@
+# Guides
 * https://littleosbook.github.io/
 
 * http://www.osdever.net/tutorials/
@@ -19,3 +20,7 @@
 * C++ exception support https://wiki.osdev.org/C%2B%2B_Exception_Support
 * Random C++ stuff https://wiki.osdev.org/C%2B%2B
 * newlib + LLVM libc++ https://wiki.osdev.org/GCC_and_Libc%2B%2B
+
+# Documentation
+
+* https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
