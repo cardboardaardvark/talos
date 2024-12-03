@@ -3,53 +3,77 @@
 extern handle_interrupt
 extern kernel_page_directory
 
+; Add 1 to eax for interrupt numbers that correspond to
+; fault and abort. Assumes ecx has the interrupt number
+; stored in it.
+maybe_adjust_return:
+    cmp ecx, 0
+    je .adjust
+
+    cmp ecx, 4
+    jle .done
+
+    cmp ecx, 20
+    jge .done
+
+    .adjust:
+    add eax, 1
+
+    .done:
+    ret
+
 idt_stub_common:
     ; get a backup of the processor state before calling into the kernel
     pusha ; push general purpose registers
-    mov eax, cr3 ; store the page directory in use when the interrupt happened
-    push eax
+    mov eax, cr3
+    push eax ; store the page directory in use when the interrupt happened
     push ds
     push es
     push fs
     push gs
-    mov ax, 0x10   ; Load the Kernel Data Segment descriptor
+
+    ; make sure the kernel page directory will be used when executing the ISRs
+    mov eax, [kernel_page_directory]
+    mov ecx, cr3
+    cmp eax, ecx
+    je .skip_set_page_directory
+
+    mov cr3, eax
+
+    .skip_set_page_directory:
+
+    ; Load the Kernel Data Segment descriptor
+    mov ax, 0x10
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
 
-    ; Make the base pointer something GDB will understand. This is for
-    ; 13 registers and 1 error code having already been pushed to the stack.
+    ; get the return address into a register
     mov eax, [esp + 15 * 4]
-    ; The CPU pushed where continuation should happen not where the fault occurred.
-    ; Make up the gap.
-    add eax, 1
+    ; get the interrupt number into a register
+    mov ecx, [esp + 13 * 4]
+
+    ; Advance the address of the return location for interrupt numbers that
+    ; continue at the place the fault happened.
+    call maybe_adjust_return
+
+    ; put together a new call frame for GDB
     push eax
     push ebp
     mov ebp, esp
 
     ; make the address for the interrupt info struct point to the
-    ; right place in the stack after the GDB adjustment.
+    ; right place in the stack after the stack entries for the
+    ; call frame
     lea eax, [esp + 8]
     push eax
 
-    ; make sure the kernel page directory will be used when executing
-    ; the ISRs
-    mov eax, [kernel_page_directory]
-    mov ebx, cr3
-    cmp eax, ebx
-    je .execute_handler
+    call handle_interrupt
 
-    mov cr3, eax
+    ; remove the call frame info and argument to handle_interrupt
+    add esp, 12
 
-    .execute_handler:
-    mov eax, handle_interrupt
-    call eax       ; A special call, preserves the 'eip' register
-
-    ; remove the GDB info
-    add esp, 8
-
-    pop eax
     pop gs
     pop fs
     pop es
