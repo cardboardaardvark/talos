@@ -33,11 +33,11 @@ idt_stub_common:
     push gs
 
     ; make sure the kernel page directory will be used when executing the ISRs
-    mov eax, [kernel_page_directory]
-    mov ecx, cr3
-    cmp eax, ecx
+    ; assumes eax still holds the contents of cr3
+    cmp eax, [kernel_page_directory]
     je .skip_set_page_directory
 
+    mov eax, [kernel_page_directory]
     mov cr3, eax
 
     .skip_set_page_directory:
@@ -54,6 +54,8 @@ idt_stub_common:
     ; get the interrupt number into a register
     mov ecx, [esp + 13 * 4]
 
+    ; TODO Is it better to jmp into maybe_adjust_return and jmp to after it
+    ; instead of using call?
     ; Advance the address of the return location for interrupt numbers that
     ; continue at the place the fault happened.
     call maybe_adjust_return
@@ -63,9 +65,11 @@ idt_stub_common:
     push ebp
     mov ebp, esp
 
+    ; TODO Align the stack at 16 bytes for the call to handle_interrupt
+
     ; make the address for the interrupt info struct point to the
-    ; right place in the stack after the stack entries for the
-    ; call frame
+    ; right place in the stack after entries were added for the
+    ; frame pointer
     lea eax, [esp + 8]
     push eax
 
@@ -81,8 +85,7 @@ idt_stub_common:
 
     ; use the original page directory if it is different from the kernel page directory
     pop eax
-    mov ecx, [kernel_page_directory]
-    cmp eax, ecx
+    cmp eax, [kernel_page_directory]
     je .continue_return
 
     mov cr3, eax
